@@ -7,9 +7,8 @@ import sys
 from transformers import AutoProcessor, SiglipVisionModel
 
 # append project directory to path so predict.py can be imported
-sys.path.append('.')
 
-from predict import SIGLIP_CACHE
+SAFETY_CACHE = "safety-cache"
 
 if os.path.exists(SIGLIP_CACHE):
     shutil.rmtree(SIGLIP_CACHE)
