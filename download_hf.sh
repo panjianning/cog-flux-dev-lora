@@ -3,7 +3,5 @@ sudo git lfs install
 sudo git lfs clone https://huggingface.co/InstantX/FLUX.1-dev-IP-Adapter
 sudo git lfs clone https://huggingface.co/google/siglip-so400m-patch14-384
 
-wget -O ip-adapter.bin "https://cdn-lfs-us-1.hf.co/repos/f5/66/f56645c09621e4dfb00b75e2a12f65b25883cb688c8a5218bb2d9267a86359ee/01aaeb0dace9ea4feee1007d30e41c59847041c116db8c2bcc14f9c91d491203?response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27ip-adapter.bin%3B+filename%3D%22ip-adapter.bin%22%3B&response-content-type=application%2Foctet-stream&Expires=1732951003&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczMjk1MTAwM319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmhmLmNvL3JlcG9zL2Y1LzY2L2Y1NjY0NWMwOTYyMWU0ZGZiMDBiNzVlMmExMmY2NWIyNTg4M2NiNjg4YzhhNTIxOGJiMmQ5MjY3YTg2MzU5ZWUvMDFhYWViMGRhY2U5ZWE0ZmVlZTEwMDdkMzBlNDFjNTk4NDcwNDFjMTE2ZGI4YzJiY2MxNGY5YzkxZDQ5MTIwMz9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSomcmVzcG9uc2UtY29udGVudC10eXBlPSoifV19&Signature=CBPHWBrQHuPQ8c1Px6xEvz9%7Ejbo-yevi4EEmjHF5ZkYv8K9m9pFQEVZakTw-ZqC80vvJF6MjM1xKSQ82LFW8rSVRwKmuDVBUIqafIRAukl84LGXrT4J5aag7ue3GX7pvgqmUH6b7ZABrfC-RIvfu6EeA2gehQvL4qQOZTjwtPXOcU-d0N02nxFPo6KtdKQao6c0nIYcgXCeEjvmycZ0PYDTwmKgZrjeChrg7fGSHYJkX9ELJnUNcRZgHd8wb2oIVgqMHdqzDZR3mPXCQPg9b0%7E4ihiOV5YHe0GQ46IhQoV1OQa344lJUVJJX8RP6Cau68mc1IqQlj%7EY5I5YLeTucpw__&Key-Pair-Id=K24J24Z295AEI9"
-
 sudo curl -o /usr/local/bin/cog -L https://github.com/replicate/cog/releases/latest/download/cog_`uname -s`_`uname -m`
 sudo chmod +x /usr/local/bin/cog
