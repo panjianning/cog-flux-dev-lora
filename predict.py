@@ -80,46 +80,41 @@ def resize_image_center_crop(image_path_or_url, target_width, target_height):
     Returns:
         A PIL Image object with the resized image, or None if there's an error.
     """
-    try:
-        if image_path_or_url.startswith(('http://', 'https://')):  # Check if it's a URL
-            response = requests.get(image_path_or_url, stream=True, timeout=5)
-            response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-            img = Image.open(io.BytesIO(response.content))
-        else:  # Assume it's a local file path
-            img = Image.open(image_path_or_url)
+    # if image_path_or_url.startswith(('http://', 'https://')):  # Check if it's a URL
+    #     response = requests.get(image_path_or_url, stream=True, timeout=5)
+    #     response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+    #     img = Image.open(io.BytesIO(response.content))
+    # else:  # Assume it's a local file path
+    img = Image.open(image_path_or_url)
 
-        img_width, img_height = img.size
+    img_width, img_height = img.size
 
-        # Calculate aspect ratios
-        aspect_ratio_img = img_width / img_height
-        aspect_ratio_target = target_width / target_height
+    # Calculate aspect ratios
+    aspect_ratio_img = img_width / img_height
+    aspect_ratio_target = target_width / target_height
 
-        # Determine cropping box
-        if aspect_ratio_img > aspect_ratio_target:  # Image is wider than target
-            new_width = int(img_height * aspect_ratio_target)
-            left = (img_width - new_width) // 2
-            right = left + new_width
-            top = 0
-            bottom = img_height
-        else:  # Image is taller or equal to target
-            new_height = int(img_width / aspect_ratio_target)
-            left = 0
-            right = img_width
-            top = (img_height - new_height) // 2
-            bottom = top + new_height
+    # Determine cropping box
+    if aspect_ratio_img > aspect_ratio_target:  # Image is wider than target
+        new_width = int(img_height * aspect_ratio_target)
+        left = (img_width - new_width) // 2
+        right = left + new_width
+        top = 0
+        bottom = img_height
+    else:  # Image is taller or equal to target
+        new_height = int(img_width / aspect_ratio_target)
+        left = 0
+        right = img_width
+        top = (img_height - new_height) // 2
+        bottom = top + new_height
 
-        # Crop the image
-        cropped_img = img.crop((left, top, right, bottom))
+    # Crop the image
+    cropped_img = img.crop((left, top, right, bottom))
 
-        # Resize to target dimensions
-        resized_img = cropped_img.resize((target_width, target_height), Image.LANCZOS)
+    # Resize to target dimensions
+    resized_img = cropped_img.resize((target_width, target_height), Image.LANCZOS)
 
-        return resized_img
+    return resized_img
 
-    except (FileNotFoundError, requests.exceptions.RequestException, IOError) as e:
-        raise  Exception(f"Error: Could not open or process image from '{image_path_or_url}'.  Error: {e}")
-    except Exception as e: #Catch other potential exceptions during image processing.
-        raise Exception(f"An unexpected error occurred: {e}")
 
 class Predictor(BasePredictor):
     def setup(self) -> None:
