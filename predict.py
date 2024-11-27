@@ -41,7 +41,7 @@ SAFETY_URL = "https://weights.replicate.delivery/default/sdxl/safety-1.0.tar"
 MODEL_URL = "https://weights.replicate.delivery/default/black-forest-labs/FLUX.1-dev/files.tar"
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
-image_encoder_path = "/src/siglip-so400m-patch14-384"
+image_encoder_path = "google/siglip-so400m-patch14-384"
 
 ASPECT_RATIOS = {
     "1:1": (1024, 1024),
@@ -209,7 +209,7 @@ class Predictor(BasePredictor):
         ),
         num_inference_steps: int = Input(
             description="Number of inference steps",
-            ge=1,le=50,default=28,
+            ge=1,le=28,default=16,
         ),
         guidance_scale: float = Input(
             description="Guidance scale for the diffusion process",
