@@ -33,7 +33,7 @@ import io
 from infer_flux_ipa_siglip import IPAdapter
 
 MAX_IMAGE_SIZE = 1440
-MODEL_CACHE = "FLUX.1-dev"
+MODEL_CACHE = "Hyper-FLUX.1-dev"
 SAFETY_CACHE = "safety-cache"
 SIGLIP_CACHE = "siglip-cache"
 FEATURE_EXTRACTOR = "/src/feature-extractor"
