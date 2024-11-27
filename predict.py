@@ -136,7 +136,7 @@ class Predictor(BasePredictor):
         
         print("Loading Flux txt2img Pipeline")
         if not os.path.exists(MODEL_CACHE):
-            download_weights(MODEL_URL, '.')
+            download_weights(MODEL_URL, MODEL_CACHE)
             
         transformer = FluxTransformer2DModel.from_pretrained(
             MODEL_CACHE, subfolder="transformer", torch_dtype=torch.bfloat16
