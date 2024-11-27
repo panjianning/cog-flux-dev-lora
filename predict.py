@@ -41,7 +41,7 @@ SAFETY_URL = "https://weights.replicate.delivery/default/sdxl/safety-1.0.tar"
 MODEL_URL = "https://weights.replicate.delivery/default/black-forest-labs/FLUX.1-dev/files.tar"
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
-image_encoder_path = "google/siglip-so400m-patch14-384"
+image_encoder_path = "/src/siglip-so400m-patch14-384"
 
 ASPECT_RATIOS = {
     "1:1": (1024, 1024),
@@ -253,7 +253,7 @@ class Predictor(BasePredictor):
             "height": height
         }
 
-        images = self.ip_model(**ip_args)
+        images = self.ip_model.generate(**ip_args)
 
         if not disable_safety_checker:
             _, has_nsfw_content = self.run_safety_checker(images)
