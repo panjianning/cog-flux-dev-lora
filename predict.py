@@ -82,7 +82,7 @@ def resize_image_center_crop(image_path_or_url, target_width, target_height):
     """
     try:
         if image_path_or_url.startswith(('http://', 'https://')):  # Check if it's a URL
-            response = requests.get(image_path_or_url, stream=True)
+            response = requests.get(image_path_or_url, stream=True, timeout=5)
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
             img = Image.open(io.BytesIO(response.content))
         else:  # Assume it's a local file path
@@ -245,10 +245,6 @@ class Predictor(BasePredictor):
             raise Exception("image input is required!")
 
         pil_image = resize_image_center_crop(image_path_or_url=image, target_width=width, target_height=height)
-
-        # Ensure the pipeline is on GPU
-        pipe = pipe.to("cuda")
-
         
         ip_args = {
             "prompt": prompt,
@@ -262,13 +258,13 @@ class Predictor(BasePredictor):
             "height": height
         }
 
-        output = pipe(**ip_args)
+        images = self.ip_model(**ip_args)
 
         if not disable_safety_checker:
-            _, has_nsfw_content = self.run_safety_checker(output.images)
+            _, has_nsfw_content = self.run_safety_checker(images)
 
         output_paths = []
-        for i, image in enumerate(output.images):
+        for i, image in enumerate(images):
             if not disable_safety_checker and has_nsfw_content[i]:
                 print(f"NSFW content detected in image {i}")
                 continue
