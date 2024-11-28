@@ -246,7 +246,7 @@ class Predictor(BasePredictor):
             ge=0,
             le=100,
         ),
-        disable_safety_checker: bool = Input(
+        disable_sc: bool = Input(
             description="Disable safety checker for generated images. This feature is only available through the API. See [https://replicate.com/docs/how-does-replicate-work#safety](https://replicate.com/docs/how-does-replicate-work#safety)",
             default=False,
         ),
@@ -262,7 +262,7 @@ class Predictor(BasePredictor):
 
         if not image:
             if control_image is not None:
-                image = control_image
+                image = '/src/default_ref.jpeg'
                 image_strength = 0
             else:
                 raise Exception("Ip ddapter image input is required when control image is None")
@@ -292,12 +292,12 @@ class Predictor(BasePredictor):
 
         images = self.ip_model.generate(**ip_args)
 
-        if not disable_safety_checker:
+        if not disable_sc:
             _, has_nsfw_content = self.run_safety_checker(images)
 
         output_paths = []
         for i, image in enumerate(images):
-            if not disable_safety_checker and has_nsfw_content[i]:
+            if not disable_sc and has_nsfw_content[i]:
                 print(f"NSFW content detected in image {i}")
                 continue
             output_path = f"/tmp/out-{i}.{output_format}"
