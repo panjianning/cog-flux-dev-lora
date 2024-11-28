@@ -55,7 +55,7 @@ MODEL_URL = "https://weights.replicate.delivery/default/ByteDance/Hyper-FLUX.1-d
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
 image_encoder_path = "/src/siglip-so400m-patch14-384"
-controlnet_path = "/src/FLUX.1-dev-Controlnet-Canny"
+controlnet_path = "InstantX/FLUX.1-dev-Controlnet-Canny"
 
 ASPECT_RATIOS = {
     "1:1": (1024, 1024),
