@@ -16,11 +16,13 @@ from transformers import CLIPImageProcessor
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker
 )
+from diffusers.models.controlnet_flux import FluxControlNetModel
+
 from PIL import Image
 
 import torch.nn as nn
 
-from pipeline_flux_ipa import FluxPipeline
+from pipeline_flux_ipa_controlnet import FluxPipeline
 from transformer_flux import FluxTransformer2DModel
 import os
 
@@ -31,6 +33,16 @@ import requests
 import io
 
 from infer_flux_ipa_siglip import IPAdapter
+import cv2
+import numpy as np
+
+def canny_processor(image, low_threshold=100, high_threshold=200):
+    image = np.array(image)
+    image = cv2.Canny(image, low_threshold, high_threshold)
+    image = image[:, :, None]
+    image = np.concatenate([image, image, image], axis=2)
+    canny_image = Image.fromarray(image)
+    return canny_image
 
 MAX_IMAGE_SIZE = 1440
 MODEL_CACHE = "Hyper-FLUX.1-dev"
@@ -43,6 +55,7 @@ MODEL_URL = "https://weights.replicate.delivery/default/ByteDance/Hyper-FLUX.1-d
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
 image_encoder_path = "/src/siglip-so400m-patch14-384"
+controlnet_path = "/src/FLUX.1-dev-Controlnet-Canny"
 
 ASPECT_RATIOS = {
     "1:1": (1024, 1024),
@@ -142,9 +155,11 @@ class Predictor(BasePredictor):
             MODEL_CACHE, subfolder="transformer", torch_dtype=torch.bfloat16
         )
         transformer = transformer.to("cuda")
+        controlnet = FluxControlNetModel.from_pretrained(controlnet_path, 
+                                                         torch_dtype=torch.bfloat16).to('cuda')
 
         pipe = FluxPipeline.from_pretrained(
-            MODEL_CACHE, transformer=transformer, torch_dtype=torch.bfloat16
+            MODEL_CACHE, transformer=transformer, controlnet=controlnet, torch_dtype=torch.bfloat16
         )
         pipe = pipe.to("cuda")
         
@@ -197,6 +212,14 @@ class Predictor(BasePredictor):
             description="Image strength (or denoising strength) when using image to image. 0.0 corresponds to full destruction of information in image.",
             ge=0,le=1,default=0.5,
         ),
+        control_image: Path = Input(
+            description="Input image for Canny ControlNet",
+            default=None,
+        ),
+        control_strength: float = Input(
+            description="Image strength (or denoising strength) when using image to image. 0.0 corresponds to full destruction of information in image.",
+            ge=0,le=1,default=0.6,
+        ),
         num_outputs: int = Input(
             description="Number of images to output.",
             ge=1,
@@ -242,10 +265,19 @@ class Predictor(BasePredictor):
 
         pil_image = resize_image_center_crop(image_path_or_url=image, target_width=width, target_height=height)
         
+        pil_control_image = None
+        if control_image:
+            pil_control_image = resize_image_center_crop(image_path_or_url=control_image, target_width=width, target_height=height)
+            pil_control_image = canny_processor(pil_control_image)
+        
         ip_args = {
             "prompt": prompt,
             "guidance_scale": guidance_scale,
             "seed":seed,
+            
+            "control_image":pil_control_image,
+            "controlnet_conditioning_scale": control_strength,
+
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,
             "pil_image": pil_image,
