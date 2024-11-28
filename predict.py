@@ -218,7 +218,7 @@ class Predictor(BasePredictor):
         ),
         control_strength: float = Input(
             description="Image strength (or denoising strength) when using image to image. 0.0 corresponds to full destruction of information in image.",
-            ge=0,le=1,default=0.6,
+            ge=0,le=1,default=0.7,
         ),
         num_outputs: int = Input(
             description="Number of images to output.",
@@ -228,7 +228,7 @@ class Predictor(BasePredictor):
         ),
         num_inference_steps: int = Input(
             description="Number of inference steps",
-            ge=1,le=28,default=16,
+            ge=1,le=50,default=8,
         ),
         guidance_scale: float = Input(
             description="Guidance scale for the diffusion process",
