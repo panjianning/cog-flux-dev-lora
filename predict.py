@@ -261,11 +261,8 @@ class Predictor(BasePredictor):
         print(f"Prompt: {prompt}")
 
         if not image:
-            if control_image is not None:
-                image = '/src/default_ref.jpeg'
-                image_strength = 0
-            else:
-                raise Exception("Ip ddapter image input is required when control image is None")
+            image = '/src/default_ref.jpeg'
+            image_strength = 0
 
         pil_image = resize_image_center_crop(image_path_or_url=image, target_width=width, target_height=height)
         
