@@ -20,7 +20,6 @@ build:
   run:
     - apt-get update && apt-get install -y git git-lfs
     - git lfs install
-    - git lfs clone https://huggingface.co/google/siglip-so400m-patch14-384 /src/siglip-so400m-patch14-384
     - git lfs clone https://huggingface.co/InstantX/FLUX.1-dev-IP-Adapter /src/FLUX.1-dev-IP-Adapter
     - curl -o /usr/local/bin/pget -L "https://github.com/replicate/pget/releases/download/v0.8.2/pget_linux_x86_64" && chmod +x /usr/local/bin/pget
     

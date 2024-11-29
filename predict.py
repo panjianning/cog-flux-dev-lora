@@ -9,6 +9,7 @@ import torch
 import subprocess
 import numpy as np
 from PIL import Image
+from transformers import pipeline as tpipe
 from typing import List
 from torchvision import transforms
 from weights import WeightsDownloadCache
@@ -16,7 +17,7 @@ from transformers import CLIPImageProcessor
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker
 )
-from diffusers.models.controlnet_flux import FluxControlNetModel
+from diffusers.models.controlnet_flux import FluxControlNetModel, FluxMultiControlNetModel
 
 from PIL import Image
 
@@ -54,8 +55,11 @@ SAFETY_URL = "https://weights.replicate.delivery/default/sdxl/safety-1.0.tar"
 MODEL_URL = "https://weights.replicate.delivery/default/ByteDance/Hyper-FLUX.1-dev-8steps/model.tar"
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
-image_encoder_path = "/src/siglip-so400m-patch14-384"
-controlnet_path = "InstantX/FLUX.1-dev-Controlnet-Canny"
+# image_encoder_path = "/src/siglip-so400m-patch14-384"
+# controlnet_path = "InstantX/FLUX.1-dev-Controlnet-Canny"
+
+image_encoder_path = "google/siglip-so400m-patch14-384"
+controlnet_path = "Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro"
 
 ASPECT_RATIOS = {
     "1:1": (1024, 1024),
@@ -155,8 +159,10 @@ class Predictor(BasePredictor):
             MODEL_CACHE, subfolder="transformer", torch_dtype=torch.bfloat16
         )
         transformer = transformer.to("cuda")
-        controlnet = FluxControlNetModel.from_pretrained(controlnet_path, 
+
+        controlnet_union = FluxControlNetModel.from_pretrained(controlnet_path, 
                                                          torch_dtype=torch.bfloat16).to('cuda')
+        controlnet = FluxMultiControlNetModel([controlnet_union])
 
         pipe = FluxPipeline.from_pretrained(
             MODEL_CACHE, transformer=transformer, controlnet=controlnet, torch_dtype=torch.bfloat16
@@ -164,6 +170,10 @@ class Predictor(BasePredictor):
         pipe = pipe.to("cuda")
         
         self.ip_model = IPAdapter(pipe, image_encoder_path, ipadapter_path, device="cuda", num_tokens=128)
+
+
+        self.depth_pipe = tpipe(task="depth-estimation", device='cuda', model="depth-anything/Depth-Anything-V2-Small-hf")
+        self.nsfw_classifier = tpipe("image-classification", device='cuda', model="Falconsai/nsfw_image_detection")
 
         print("setup took: ", time.time() - start)
 
@@ -176,6 +186,21 @@ class Predictor(BasePredictor):
             clip_input=safety_checker_input.pixel_values.to(torch.float16),
         )
         return image, has_nsfw_concept
+
+
+    def run_nsfw_checker(self, images):
+        result = []
+        for image in images:
+            items = self.nsfw_classifier(image)
+            print(items)
+            nsfw = False
+            for item in  items:
+                if item['label'] == 'nsfw' and item['score'] >= 0.5:
+                    nsfw = True
+                    break
+            result.append(nsfw)
+        return result
+
 
     def aspect_ratio_to_width_height(self, aspect_ratio: str) -> tuple[int, int]:
         return ASPECT_RATIOS[aspect_ratio]
@@ -209,15 +234,15 @@ class Predictor(BasePredictor):
             default=None,
         ),
         image_strength: float = Input(
-            description="Image strength (or denoising strength) when using image to image. 0.0 corresponds to full destruction of information in image.",
+            description="Ip Adatater Image strength. 0.0 corresponds to no ip adapter.",
             ge=0,le=1,default=0.5,
         ),
         control_image: Path = Input(
-            description="Input image for Canny ControlNet",
+            description="Input image for Depth ControlNet",
             default=None,
         ),
         control_strength: float = Input(
-            description="Image strength (or denoising strength) when using image to image. 0.0 corresponds to full destruction of information in image.",
+            description="Depth Control Image strength. 0.0 corresponds no depth control",
             ge=0,le=1,default=0.7,
         ),
         num_outputs: int = Input(
@@ -227,7 +252,7 @@ class Predictor(BasePredictor):
             default=1,
         ),
         num_inference_steps: int = Input(
-            description="Number of inference steps",
+            description="Number of inference steps.",
             ge=1,le=50,default=8,
         ),
         guidance_scale: float = Input(
@@ -264,20 +289,22 @@ class Predictor(BasePredictor):
             image = '/src/default_ref.jpeg'
             image_strength = 0
 
-        pil_image = resize_image_center_crop(image_path_or_url=image, target_width=width, target_height=height)
+        pil_image = resize_image_center_crop(image_path_or_url=image, target_width=width, target_height=height).convert('RGB')
         
         pil_control_image = None
         if control_image:
             pil_control_image = resize_image_center_crop(image_path_or_url=control_image, target_width=width, target_height=height)
-            pil_control_image = canny_processor(pil_control_image)
+            pil_control_image = self.depth_pipe(pil_control_image)["depth"].convert('RGB')
+            # pil_control_image = canny_processor(pil_control_image)
         
         ip_args = {
             "prompt": prompt,
             "guidance_scale": guidance_scale,
             "seed":seed,
             
-            "control_image":pil_control_image,
-            "controlnet_conditioning_scale": control_strength,
+            "control_image": [pil_control_image] if pil_control_image is not None else None,
+            "controlnet_conditioning_scale": [control_strength],
+            "control_mode": [2],
 
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,
@@ -290,7 +317,7 @@ class Predictor(BasePredictor):
         images = self.ip_model.generate(**ip_args)
 
         if not disable_sc:
-            _, has_nsfw_content = self.run_safety_checker(images)
+            has_nsfw_content = self.run_nsfw_checker(images)
 
         output_paths = []
         for i, image in enumerate(images):
