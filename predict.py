@@ -55,10 +55,10 @@ SAFETY_URL = "https://weights.replicate.delivery/default/sdxl/safety-1.0.tar"
 MODEL_URL = "https://weights.replicate.delivery/default/ByteDance/Hyper-FLUX.1-dev-8steps/model.tar"
 
 ipadapter_path = "/src/FLUX.1-dev-IP-Adapter/ip-adapter.bin"   
-# image_encoder_path = "/src/siglip-so400m-patch14-384"
+image_encoder_path = "/src/siglip-so400m-patch14-384"
 # controlnet_path = "InstantX/FLUX.1-dev-Controlnet-Canny"
+# image_encoder_path = "google/siglip-so400m-patch14-384"
 
-image_encoder_path = "google/siglip-so400m-patch14-384"
 controlnet_path = "Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro"
 
 ASPECT_RATIOS = {
