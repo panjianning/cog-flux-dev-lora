@@ -275,6 +275,12 @@ class Predictor(BasePredictor):
             description="Face Image strength. 0.0 corresponds no face control",
             ge=0,le=1,default=1.0,
         ),
+        face_start_step: int = Input(
+            description="Step index to start applying pulid.",
+            ge=0,
+            le=4,
+            default=1,
+        ),
         num_outputs: int = Input(
             description="Number of images to output.",
             ge=1,
@@ -344,6 +350,7 @@ class Predictor(BasePredictor):
             
             "id": id_embeddings,
             "id_weight": face_strength,
+            "id_start_step": face_start_step,
 
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,

@@ -711,7 +711,8 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
         id: torch.Tensor = None,
         uncond_id: torch.Tensor = None,
         
-        id_weight: float = 1
+        id_weight: float = 1,
+        id_start_step: int = 1
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -1048,8 +1049,9 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         controlnet_single_block_samples=controlnet_single_block_samples,
                         controlnet_blocks_repeat=controlnet_blocks_repeat,
                         
-                        id=id,
+                        id=id if i>= id_start_step else None,
                         id_weight=id_weight,
+                        
                     )[0]
                 else:
                     noise_pred = self.transformer(
@@ -1064,7 +1066,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         joint_attention_kwargs=self.joint_attention_kwargs,
                         return_dict=False,
                         
-                        id=id,
+                        id=id if i>= id_start_step else None,
                         id_weight=id_weight,
                     )[0]         
 
