@@ -279,7 +279,7 @@ class Predictor(BasePredictor):
             description="Step index to start applying pulid.",
             ge=0,
             le=4,
-            default=1,
+            default=0,
         ),
         num_outputs: int = Input(
             description="Number of images to output.",
@@ -351,7 +351,9 @@ class Predictor(BasePredictor):
             "id": id_embeddings,
             "id_weight": face_strength,
             "id_start_step": face_start_step,
-
+            "early_id_weight":0.5,
+            "early_step":3,
+            
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,
             "pil_image": pil_image,

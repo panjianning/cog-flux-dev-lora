@@ -712,7 +712,9 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
         uncond_id: torch.Tensor = None,
         
         id_weight: float = 1,
-        id_start_step: int = 1
+        id_start_step: int = 1,
+        early_step: int = 1,
+        early_id_weight: int = 1
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -1050,7 +1052,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         controlnet_blocks_repeat=controlnet_blocks_repeat,
                         
                         id=id if i>= id_start_step else None,
-                        id_weight=id_weight,
+                        id_weight=id_weight if i >= early_step else early_id_weight,
                         
                     )[0]
                 else:
@@ -1067,7 +1069,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         return_dict=False,
                         
                         id=id if i>= id_start_step else None,
-                        id_weight=id_weight,
+                        id_weight=id_weight if i >= early_step else early_id_weight,
                     )[0]         
 
                 # compute the previous noisy sample x_t -> x_t-1
