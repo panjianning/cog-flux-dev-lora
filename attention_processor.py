@@ -110,6 +110,7 @@ class IPAFluxAttnProcessor2_0(nn.Module):
         if image_rotary_emb is not None:
             from diffusers.models.embeddings import apply_rotary_emb
 
+            # https://github.com/black-forest-labs/flux/blob/main/src/flux/math.py#L7
             query = apply_rotary_emb(query, image_rotary_emb)
             key = apply_rotary_emb(key, image_rotary_emb)
 

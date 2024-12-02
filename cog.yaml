@@ -3,6 +3,14 @@
 
 build:
   gpu: true
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "libjpeg-dev"
+    - "libpng-dev"
+
   cuda: "12.4"
   python_version: "3.10.14"
   python_packages:
@@ -16,6 +24,22 @@ build:
     - "numpy==1.26.0"
     - "pillow==10.4.0"
     - "peft==0.13.0"
+    - opencv-python
+    - httpx==0.23.3
+    - timm
+    - einops
+    - ftfy
+    - basicsr
+    - facexlib
+    - insightface
+    - onnxruntime-gpu
+    - fire
+    - safetensors
+    - invisible-watermark
+    - setuptools
+    # https://github.com/replicate/cog/issues/1623
+    - "albumentations==1.4.3"
+    - "pydantic==1.10.11"
 
   run:
     - apt-get update && apt-get install -y git git-lfs

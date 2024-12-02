@@ -1,6 +1,9 @@
 # Prediction interface for Cog ⚙️
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
+import os
+os.sys.path.append('/src/PuLID/')
+
 from cog import BasePredictor, Input, Path
 import os
 import re
@@ -36,6 +39,9 @@ import io
 from infer_flux_ipa_siglip import IPAdapter
 import cv2
 import numpy as np
+
+from PuLID.pulid.pipeline_flux import PuLIDPipeline
+
 
 def canny_processor(image, low_threshold=100, high_threshold=200):
     image = np.array(image)
@@ -134,11 +140,23 @@ def resize_image_center_crop(image_path_or_url, target_width, target_height):
     return resized_img
 
 
+def resize_numpy_image_long(image, resize_long_edge=768):
+    h, w = image.shape[:2]
+    if max(h, w) <= resize_long_edge:
+        return image
+    k = resize_long_edge / max(h, w)
+    h = int(h * k)
+    w = int(w * k)
+    image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LANCZOS4)
+    return image
+
+
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
         start = time.time()
         
+
 
         self.weights_cache = WeightsDownloadCache()
         self.last_loaded_lora = None
@@ -159,6 +177,10 @@ class Predictor(BasePredictor):
             MODEL_CACHE, subfolder="transformer", torch_dtype=torch.bfloat16
         )
         transformer = transformer.to("cuda")
+
+        self.pulid_model = PuLIDPipeline(transformer, device="cuda", weight_dtype=torch.bfloat16,
+                    onnx_provider='gpu')
+        self.pulid_model.load_pretrain()
 
         controlnet_union = FluxControlNetModel.from_pretrained(controlnet_path, 
                                                          torch_dtype=torch.bfloat16).to('cuda')
@@ -245,6 +267,14 @@ class Predictor(BasePredictor):
             description="Depth Control Image strength. 0.0 corresponds no depth control",
             ge=0,le=1,default=0.7,
         ),
+        face_image:  Path = Input(
+            description="Face image for Pulid",
+            default=None,
+        ),
+        face_strength: float = Input(
+            description="Face Image strength. 0.0 corresponds no face control",
+            ge=0,le=1,default=1.0,
+        ),
         num_outputs: int = Input(
             description="Number of images to output.",
             ge=1,
@@ -297,6 +327,12 @@ class Predictor(BasePredictor):
             pil_control_image = self.depth_pipe(pil_control_image)["depth"].convert('RGB')
             # pil_control_image = canny_processor(pil_control_image)
         
+        id_embeddings = None
+        if face_image:
+            pil_face_image = resize_image_center_crop(image_path_or_url=face_image, target_width=width, target_height=height)
+            face_image_arr = resize_numpy_image_long(np.array(pil_face_image),1024)
+            id_embeddings, uncond_id_embeddings = self.pulid_model.get_id_embedding(face_image_arr)
+
         ip_args = {
             "prompt": prompt,
             "guidance_scale": guidance_scale,
@@ -305,6 +341,9 @@ class Predictor(BasePredictor):
             "control_image": [pil_control_image] if pil_control_image is not None else None,
             "controlnet_conditioning_scale": [control_strength],
             "control_mode": [2],
+            
+            "id": id_embeddings,
+            "id_weight": face_strength,
 
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,

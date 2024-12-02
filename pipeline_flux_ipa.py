@@ -650,6 +650,8 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
         callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         max_sequence_length: int = 512,
+        id: torch.Tensor = None,
+        uncond_id: torch.Tensor = None,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -829,6 +831,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                     img_ids=latent_image_ids,
                     joint_attention_kwargs=self.joint_attention_kwargs,
                     return_dict=False,
+                    id=id,
                 )[0]
 
                 # compute the previous noisy sample x_t -> x_t-1

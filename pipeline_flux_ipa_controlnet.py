@@ -707,6 +707,11 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
         control_image: PipelineImageInput = None,
         control_mode: Optional[Union[int, List[int]]] = None,
         controlnet_conditioning_scale: Union[float, List[float]] = 0.7,
+        
+        id: torch.Tensor = None,
+        uncond_id: torch.Tensor = None,
+        
+        id_weight: float = 1
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -1042,6 +1047,9 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         controlnet_block_samples=controlnet_block_samples,
                         controlnet_single_block_samples=controlnet_single_block_samples,
                         controlnet_blocks_repeat=controlnet_blocks_repeat,
+                        
+                        id=id,
+                        id_weight=id_weight,
                     )[0]
                 else:
                     noise_pred = self.transformer(
@@ -1055,6 +1063,9 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
                         img_ids=latent_image_ids,
                         joint_attention_kwargs=self.joint_attention_kwargs,
                         return_dict=False,
+                        
+                        id=id,
+                        id_weight=id_weight,
                     )[0]         
 
                 # compute the previous noisy sample x_t -> x_t-1

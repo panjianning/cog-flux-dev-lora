@@ -76,6 +76,7 @@ class FluxSingleTransformerBlock(nn.Module):
             eps=1e-6,
             pre_only=True,
         )
+        
 
     def forward(
         self,
@@ -282,6 +283,11 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         self.proj_out = nn.Linear(self.inner_dim, patch_size * patch_size * self.out_channels, bias=True)
 
         self.gradient_checkpointing = False
+        
+        # pulid
+        self.pulid_ca = None
+        self.pulid_double_interval = 2
+        self.pulid_single_interval = 4
 
     @property
     # Copied from diffusers.models.unets.unet_2d_condition.UNet2DConditionModel.attn_processors
@@ -402,6 +408,8 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         controlnet_single_block_samples=None,
         controlnet_blocks_repeat: bool = False,
         return_dict: bool = True,
+        id: torch.Tensor = None,
+        id_weight: float = 1.0,
     ) -> Union[torch.FloatTensor, Transformer2DModelOutput]:
         """
         The [`FluxTransformer2DModel`] forward method.
@@ -474,6 +482,7 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         ids = torch.cat((txt_ids, img_ids), dim=0)
         image_rotary_emb = self.pos_embed(ids)
         
+        ca_idx = 0
         for index_block, block in enumerate(self.transformer_blocks):
             if self.training and self.gradient_checkpointing:
 
@@ -505,6 +514,9 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
                     image_emb=image_emb,
                     image_rotary_emb=image_rotary_emb,
                 )
+                if index_block % self.pulid_double_interval == 0 and id is not None:
+                    hidden_states = hidden_states + id_weight * self.pulid_ca[ca_idx](id, hidden_states)
+                    ca_idx += 1
                         
             # controlnet residual
             if controlnet_block_samples is not None:
@@ -518,7 +530,7 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
                     )
                 else:
                     hidden_states = hidden_states + controlnet_block_samples[index_block // interval_control]
-                    
+        
         hidden_states = torch.cat([encoder_hidden_states, hidden_states], dim=1)
 
         for index_block, block in enumerate(self.single_transformer_blocks):
@@ -550,7 +562,16 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
                     image_emb=image_emb,
                     image_rotary_emb=image_rotary_emb,
                 )
-                        
+                if id is not None:
+                    real_img, encoder_hidden_states = hidden_states[:, encoder_hidden_states.shape[1]:, ...], hidden_states[:, :encoder_hidden_states.shape[1], ...]
+
+                if index_block % self.pulid_single_interval == 0 and id is not None:
+                    real_img = real_img + id_weight * self.pulid_ca[ca_idx](id, real_img)
+                    ca_idx += 1
+                
+                if id is not None:
+                    hidden_states = torch.cat((encoder_hidden_states, real_img), 1)
+                
             # controlnet residual
             if controlnet_single_block_samples is not None:
                 interval_control = len(self.single_transformer_blocks) / len(controlnet_single_block_samples)
