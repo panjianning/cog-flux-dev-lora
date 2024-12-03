@@ -352,7 +352,7 @@ class Predictor(BasePredictor):
             "id_weight": face_strength,
             "id_start_step": face_start_step,
             "early_id_weight":0.5,
-            "early_step":3,
+            "early_step":1,
             
             "num_inference_steps": num_inference_steps,
             "num_samples":num_outputs,

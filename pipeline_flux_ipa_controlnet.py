@@ -714,7 +714,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin, FromSingleFileMixin):
         id_weight: float = 1,
         id_start_step: int = 1,
         early_step: int = 1,
-        early_id_weight: int = 1
+        early_id_weight: int = 0.5
     ):
         r"""
         Function invoked when calling the pipeline for generation.
